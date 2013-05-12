@@ -282,7 +282,7 @@ SoundManager = Class.extend({
     },
     stop: function(name) {
         if (this.enabled) {
-            this.clips[name].currentTime = 0;
+            this.clips[name].pause();
         }
     }
 });
@@ -452,7 +452,7 @@ function drawSplashPregame(context) {
     y = splashY + 150;
     drawText(context, text, gSettings.smallFont, gSettings.splashTextColor, x, y);
     
-    text = "Use the mouse to target missiles and destroy attackers";
+    text = "Use the mouse to target missiles";
     x = splashX + 10;
     y = splashY + 200;
     drawText(context, text, gSettings.smallFont, gSettings.splashTextColor, x, y);
@@ -471,13 +471,13 @@ function drawSplashEndgame(context) {
     drawRect(context, splashX, splashY, splashWidth, splashHeight, gSettings.splashBackgroundColor);
     
     text = "You lasted " + calc_time() + " seconds";
-    x = splashX + 150;
-    y = splashY + 150;
+    x = splashX + 10;
+    y = splashY + 50;
     drawText(context, text, gSettings.bigFont, gSettings.splashTextColor, x, y);
     
     text = "Press the space bar to try again";
-    x = splashX + 140;
-    y = splashY + 200;
+    x = splashX + 10;
+    y = splashY + 100;
     drawText(context, text, gSettings.smallFont, gSettings.splashTextColor, x, y);
 }
 function drawGame() {
