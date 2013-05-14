@@ -260,7 +260,12 @@ FriendlyMissile = Missile.extend({
     }
 });
 
+function onSoundLoad() {
+    gSound.numSoundsLoaded++;
+}
 SoundManager = Class.extend({
+    numSoundsToLoad: 3,
+    numSoundsLoaded: 0,
     clips: [],
     enabled: true,
     init: function() {
@@ -270,6 +275,11 @@ SoundManager = Class.extend({
             this.clips['launch'] = new Audio("sfx_fly.ogg");
             this.clips['explosion'] = new Audio("DeathFlash.ogg");
             this.clips['music'] = new Audio("DST-AngryRobotIII.mp3");
+            
+            for (var key in this.clips) {
+                //this.clips[key].preload = "auto";
+                this.clips[key].addEventListener('loadeddata', onSoundLoad);
+            }
         } catch(e) {
             alert("Web Audio not supported");
         }
@@ -283,6 +293,11 @@ SoundManager = Class.extend({
     stop: function(name) {
         if (this.enabled) {
             this.clips[name].pause();
+        }
+    },
+    volume: function(name, volume) {
+        if (this.enabled) {
+            this.clips[name].volume = volume;
         }
     }
 });
@@ -346,11 +361,12 @@ gStartTime = 0;
 gCurrentTime = 0;
 
 State = {
+    LOADING: 0,
     PREGAME: 1,
     INGAME: 2,
     ENDGAME: 3
 }
-gState = State.PREGAME;
+gState = State.LOADING;
 
 gSettings = {
     width: gCanvas.width,
@@ -359,8 +375,8 @@ gSettings = {
     missilevelocity: 25,
     missileradius: 2,
     
-    blastspeed: 12,
-    blastradius: 70,
+    blastspeed: 15,
+    blastradius: 50,
     
     planetradius: 16,
     
@@ -381,7 +397,10 @@ function newGame() {
     gEnemyCount = 0;
     gStartTime = Date.now();
     gState = State.INGAME;
+    
+    
     gSound.play('music');
+    gSound.volume('music', 0.5);
 }
 function endGame() {
     gState = State.ENDGAME;
@@ -433,6 +452,32 @@ function checkCollisions() {
             }
         }
     }
+}
+
+function drawSplashLoading(context) {
+    total = gSound.numSoundsToLoad + gImage.numImagesToLoad;
+    loaded = gSound.numSoundsLoaded + gImage.numImagesLoaded;
+    if (loaded == total) {
+        gState = State.PREGAME;
+        return;
+    }
+    
+    splashWidth = gSettings.width * (2/3);
+    splashHeight = gSettings.height * (2/3);
+    splashX = (gSettings.width - splashWidth) / 2;
+    splashY = (gSettings.height - splashHeight) / 2;
+
+    drawRect(context, splashX, splashY, splashWidth, splashHeight, gSettings.splashBackgroundColor);
+
+    text = "Blue Ball Defender";
+    x = splashX + 10;
+    y = splashY + 50;
+    drawText(context, text, gSettings.bigFont, gSettings.splashTextColor, x, y);
+    
+    text = "Loading...    "+loaded+"/"+total;
+    x = splashX + 10;
+    y = splashY + 150;
+    drawText(context, text, gSettings.smallFont, gSettings.splashTextColor, x, y);
 }
 function drawSplashPregame(context) {
     splashWidth = gSettings.width * (2/3);
@@ -507,7 +552,9 @@ function drawGame() {
         gMissiles[i].draw(gContext);
     }
     
-    if (gState == State.PREGAME) {
+    if (gState == State.LOADING) {
+        drawSplashLoading(gContext);
+    } else if (gState == State.PREGAME) {
         drawSplashPregame(gContext);
     } else if (gState == State.ENDGAME) {
         drawSplashEndgame(gContext);
