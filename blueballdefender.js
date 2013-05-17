@@ -153,7 +153,10 @@ TheWorld = MyRoundSprite.extend({
         this._super(pos, [0, 0], gSettings.planetradius, gSettings.planetradius);
     },
     draw: function(context) {
-         context.drawImage(gImage.getImage('planet'), this.pos[0] - this.currentradius, this.pos[1] - this.currentradius);
+        planetimage = gImage.getImage('planet');
+        if (planetimage) {
+            context.drawImage(planetimage, this.pos[0] - this.currentradius, this.pos[1] - this.currentradius);
+        }
     }
 });
 
@@ -264,40 +267,39 @@ function onSoundLoad() {
     gSound.numSoundsLoaded++;
 }
 SoundManager = Class.extend({
-    numSoundsToLoad: 3,
     numSoundsLoaded: 0,
-    clips: [],
+    sounds: Array(2),
     enabled: true,
     init: function() {
         try {
             this._context = new webkitAudioContext();
             
-            this.clips['launch'] = new Audio("sfx_fly.ogg");
-            this.clips['explosion'] = new Audio("DeathFlash.ogg");
-            this.clips['music'] = new Audio("DST-AngryRobotIII.mp3");
+            this.sounds['launch'] = new Audio("sfx_fly.ogg");
+            this.sounds['explosion'] = new Audio("DeathFlash.ogg");
+            //this.sounds['music'] = new Audio("DST-AngryRobotIII.mp3");
             
-            for (var key in this.clips) {
-                //this.clips[key].preload = "auto";
-                this.clips[key].addEventListener('loadeddata', onSoundLoad);
+            for (var key in this.sounds) {
+                //this.sounds[key].preload = "auto";
+                this.sounds[key].addEventListener('loadeddata', onSoundLoad);
             }
         } catch(e) {
             alert("Web Audio not supported");
         }
     },
     play: function(name) {
-        if (this.enabled) {
-            this.clips[name].currentTime = 0;
-            this.clips[name].play();
+        if (this.enabled && name in this.sounds) {
+            this.sounds[name].currentTime = 0;
+            this.sounds[name].play();
         }
     },
     stop: function(name) {
-        if (this.enabled) {
-            this.clips[name].pause();
+        if (this.enabled && name in this.sounds) {
+            this.sounds[name].pause();
         }
     },
     volume: function(name, volume) {
-        if (this.enabled) {
-            this.clips[name].volume = volume;
+        if (this.enabled && name in this.sounds) {
+            this.sounds[name].volume = volume;
         }
     }
 });
@@ -307,16 +309,15 @@ function onImageLoad() {
     gImage.numImagesLoaded++;
 }
 ImageManager = Class.extend({
-    numImagesToLoad: 1,
     numImagesLoaded: 0,
-    images: [],
+    images: Array(1),
     init: function() {            
         this.images['planet'] = new Image();
         this.images['planet'].onload = onImageLoad;
         this.images['planet'].src = 'terre.png';
     },
     getImage: function(name) {
-        if (this.numImagesToLoad == this.numImagesLoaded) {
+        if (this.images.length == this.numImagesLoaded) {
             return this.images[name];
         } else {
             return null;
@@ -337,18 +338,6 @@ function onKeyPress(event) {
             newGame();
         }
     }
-}
-
-function drawPixel (x, y, r, g, b, a) {
-    var index = (x + y * gCanvas.width) * 4;
-
-    gCanvasData.data[index + 0] = r;
-    gCanvasData.data[index + 1] = g;
-    gCanvasData.data[index + 2] = b;
-    gCanvasData.data[index + 3] = a;
-}
-function updateCanvas() {
-    gContext.putImageData(gCanvasData, 0, 0);
 }
 
 var gCanvas = document.getElementById('blueballdefendercanvas');
@@ -455,7 +444,7 @@ function checkCollisions() {
 }
 
 function drawSplashLoading(context) {
-    total = gSound.numSoundsToLoad + gImage.numImagesToLoad;
+    total = gSound.sounds.length + gImage.images.length;
     loaded = gSound.numSoundsLoaded + gImage.numImagesLoaded;
     if (loaded == total) {
         gState = State.PREGAME;
@@ -536,14 +525,9 @@ function drawGame() {
             xpos = getRandomInt(0, gSettings.width);
             ypos = getRandomInt(0, gSettings.height);
             gStars.push([xpos,ypos]);
-            //drawPixel(x, y, 255, 255, 255, 255);
         }
-        //updateCanvas();
-        //gStars = true;
     }
-    
     for (var i = 0; i < gStars.length; i++) {
-        //gContext.fillRect(gStars[i][0], gStars[i][1], 1, 1);
         drawRect(gContext, gStars[i][0], gStars[i][1], 1, 1, 'white');
     }
 
