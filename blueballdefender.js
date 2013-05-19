@@ -272,7 +272,7 @@ SoundManager = Class.extend({
     enabled: true,
     init: function() {
         try {
-            this._context = new webkitAudioContext();
+            //this._context = new webkitAudioContext();
             
             this.sounds['launch'] = new Audio("sfx_fly.ogg");
             this.sounds['explosion'] = new Audio("DeathFlash.ogg");
@@ -328,10 +328,30 @@ var gImage = new ImageManager();
 
 function onMouseClick(event) {
     if (gState == State.INGAME) {
-        gMissiles.push(new FriendlyMissile([event.x, event.y]));
+        var mouseX;
+        var mouseY;
+        if ( event.offsetX == null ) { // Firefox
+            //mouseX = event.layerX;
+            //mouseY = event.layerY;
+            if (event.pageX || event.pageY) { 
+              mouseX = event.pageX;
+              mouseY = event.pageY;
+            }
+            else { 
+              mouseX = event.clientX + document.body.scrollLeft + document.documentElement.scrollLeft; 
+              mouseY = event.clientY + document.body.scrollTop + document.documentElement.scrollTop; 
+            } 
+            mouseX -= gCanvas.offsetLeft;
+            mouseY -= gCanvas.offsetTop;
+        } else {                       // Other browsers
+           mouseX = event.offsetX;
+           mouseY = event.offsetY;
+        }
+
+        gMissiles.push(new FriendlyMissile([mouseX, mouseY]));
     }
 }
-function onKeyPress(event) {
+function onKeyDown(event) {
     // if there's no game in progress and they press space, start a game
     if (gState == State.PREGAME || gState == State.ENDGAME) {
         if (event.keyCode == 32) {
@@ -342,7 +362,7 @@ function onKeyPress(event) {
 
 var gCanvas = document.getElementById('blueballdefendercanvas');
 gCanvas.addEventListener('click', onMouseClick);
-window.addEventListener('keypress', onKeyPress, false);
+window.addEventListener('keydown', onKeyDown, false);
 var gContext = gCanvas.getContext('2d');
 var gCanvasData = gContext.getImageData(0, 0, gCanvas.width, gCanvas.height);
 
