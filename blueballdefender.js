@@ -1,9 +1,15 @@
 
-function drawCircle(context, pos, radius, color) {
+function drawCircle(context, pos, radius, color, outline) {
     context.beginPath();
     context.arc(pos[0], pos[1], radius, 0, 2 * Math.PI, true);
-    context.fillStyle = color;
-    context.fill();
+    if (outline) {
+        context.strokeStyle = color;
+        context.stroke();
+    } else {
+        context.fillStyle = color;
+        context.fill();
+    }
+    
 }
 function drawRect(context, x, y, width, height, color) {
     context.fillStyle = color;
@@ -54,6 +60,14 @@ function calc_time() {
 
 function pos_to_draw_pos(pos, radius) {
     return [pos[0] - radius, pos[1] - radius];
+}
+
+function getMinRange() {
+    return gSettings.blastradius + gSettings.planetradius;
+}
+
+function getCentre() {
+    return [gSettings.width/2, gSettings.height/2];
 }
 
 //http://ejohn.org/blog/simple-javascript-inheritance/#postcomment
@@ -149,8 +163,7 @@ MyRoundSprite = Class.extend({
 TheWorld = MyRoundSprite.extend({
     init: function() {
         
-        pos = [gSettings.width/2, gSettings.height/2];
-        this._super(pos, [0, 0], gSettings.planetradius, gSettings.planetradius);
+        this._super(getCentre(), [0, 0], gSettings.planetradius, gSettings.planetradius);
     },
     draw: function(context) {
         planetimage = gImage.getImage('planet');
@@ -226,7 +239,7 @@ EnemyMissile = Missile.extend({
             pos[0] = getRandomInt(0, gSettings.width);
             pos[1] = chooseFromArray([0, gSettings.height]);
         }
-        vel = calc_vel(pos, [gSettings.width/2, gSettings.height/2], gSettings.missilevelocity);
+        vel = calc_vel(pos, getCentre(), gSettings.missilevelocity);
     
         this._super(pos, vel, 'red', gSettings.blastspeed);
     },
@@ -238,7 +251,7 @@ EnemyMissile = Missile.extend({
 
 FriendlyMissile = Missile.extend({
     init: function(destination) {
-        this.center = [gSettings.width/2, gSettings.height/2];
+        this.center = getCentre();
         this.targetrange = calc_distance(this.center, destination);
         
         // use center as start pos so we can figure out vel vector
@@ -310,11 +323,15 @@ function onImageLoad() {
 }
 ImageManager = Class.extend({
     numImagesLoaded: 0,
-    images: Array(1),
+    images: Array(2),
     init: function() {            
         this.images['planet'] = new Image();
         this.images['planet'].onload = onImageLoad;
         this.images['planet'].src = 'terre.png';
+        
+        this.images['crosshair'] = new Image();
+        this.images['crosshair'].onload = onImageLoad;
+        this.images['crosshair'].src = 'crosshair.png';
     },
     getImage: function(name) {
         if (this.images.length == this.numImagesLoaded) {
@@ -331,8 +348,6 @@ function onMouseClick(event) {
         var mouseX;
         var mouseY;
         if ( event.offsetX == null ) { // Firefox
-            //mouseX = event.layerX;
-            //mouseY = event.layerY;
             if (event.pageX || event.pageY) { 
               mouseX = event.pageX;
               mouseY = event.pageY;
@@ -347,8 +362,13 @@ function onMouseClick(event) {
            mouseX = event.offsetX;
            mouseY = event.offsetY;
         }
-
-        gMissiles.push(new FriendlyMissile([mouseX, mouseY]));
+        target = [mouseX, mouseY];
+        
+        if (calc_distance(target, getCentre()) > getMinRange()) {
+            gMissiles.push(new FriendlyMissile(target));
+        } else {
+            
+        }
     }
 }
 function onKeyDown(event) {
@@ -362,9 +382,22 @@ function onKeyDown(event) {
 
 var gCanvas = document.getElementById('blueballdefendercanvas');
 gCanvas.addEventListener('click', onMouseClick);
+gCanvas.style.cursor = "none";
+
 window.addEventListener('keydown', onKeyDown, false);
 var gContext = gCanvas.getContext('2d');
-var gCanvasData = gContext.getImageData(0, 0, gCanvas.width, gCanvas.height);
+
+var gMousePos = null;
+function getMousePos(evt) {
+    var rect = gCanvas.getBoundingClientRect();
+    return {
+        x: evt.clientX - rect.left,
+        y: evt.clientY - rect.top
+    };
+}
+gCanvas.addEventListener('mousemove', function(evt) {
+    gMousePos = getMousePos(evt);
+}, false);
 
 gStartTime = 0;
 gCurrentTime = 0;
@@ -388,6 +421,7 @@ gSettings = {
     blastradius: 50,
     
     planetradius: 16,
+    minRangeColor: 'MidnightBlue',
     
     splashBackgroundColor: "#0A0A0A",
 
@@ -539,6 +573,15 @@ function drawGame() {
     gContext.fillRect(0 , 0, gCanvas.width, gCanvas.height);
     //context.clearRect(0, 0, canvas.width, canvas.height);
     
+    // draw the crosshairs
+    if (gMousePos) {
+        crosshairimage = gImage.getImage('crosshair');
+        halfwidth = crosshairimage.width/2;
+        if (crosshairimage) {
+            gContext.drawImage(crosshairimage, gMousePos.x - halfwidth, gMousePos.y - halfwidth);
+        }
+    }
+    
     //draw stars
     if (gStars.length == 0) {
         for (var i = 0; i < 100; i++) {
@@ -550,6 +593,10 @@ function drawGame() {
     for (var i = 0; i < gStars.length; i++) {
         drawRect(gContext, gStars[i][0], gStars[i][1], 1, 1, 'white');
     }
+
+    // Draw the minimum target range
+    minrange = getMinRange();
+    drawCircle(gContext, getCentre(), minrange, gSettings.minRangeColor, true);
 
     gTheWorld.draw(gContext);
     for (var i = 0; i < gMissiles.length; i++) {
