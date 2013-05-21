@@ -573,15 +573,6 @@ function drawGame() {
     gContext.fillRect(0 , 0, gCanvas.width, gCanvas.height);
     //context.clearRect(0, 0, canvas.width, canvas.height);
     
-    // draw the crosshairs
-    if (gMousePos) {
-        crosshairimage = gImage.getImage('crosshair');
-        halfwidth = crosshairimage.width/2;
-        if (crosshairimage) {
-            gContext.drawImage(crosshairimage, gMousePos.x - halfwidth, gMousePos.y - halfwidth);
-        }
-    }
-    
     //draw stars
     if (gStars.length == 0) {
         for (var i = 0; i < 100; i++) {
@@ -593,17 +584,26 @@ function drawGame() {
     for (var i = 0; i < gStars.length; i++) {
         drawRect(gContext, gStars[i][0], gStars[i][1], 1, 1, 'white');
     }
-
-    // Draw the minimum target range
-    minrange = getMinRange();
-    drawCircle(gContext, getCentre(), minrange, gSettings.minRangeColor, true);
-
-    gTheWorld.draw(gContext);
-    for (var i = 0; i < gMissiles.length; i++) {
-        gMissiles[i].draw(gContext);
-    }
     
-    if (gState == State.LOADING) {
+    if (gState == State.INGAME) {
+        // Draw the minimum target range
+        minrange = getMinRange();
+        drawCircle(gContext, getCentre(), minrange, gSettings.minRangeColor, true);
+
+        gTheWorld.draw(gContext);
+        for (var i = 0; i < gMissiles.length; i++) {
+            gMissiles[i].draw(gContext);
+        }
+        
+        // draw the crosshairs
+        if (gMousePos) {
+            crosshairimage = gImage.getImage('crosshair');
+            halfwidth = crosshairimage.width/2;
+            if (crosshairimage) {
+                gContext.drawImage(crosshairimage, gMousePos.x - halfwidth, gMousePos.y - halfwidth);
+            }
+        }
+    } else if (gState == State.LOADING) {
         drawSplashLoading(gContext);
     } else if (gState == State.PREGAME) {
         drawSplashPregame(gContext);
