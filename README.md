@@ -1,6 +1,8 @@
 blue-ball-defender
 ==================
 
+Play it http://thetravelingprogrammer.com/files/BlueBallDefenderWeb/index.html
+
 "Blue Ball Defender" is a free game that you hopefully find amusing or interesting in some way.
 
 All programming was done by Andrew Davis.
